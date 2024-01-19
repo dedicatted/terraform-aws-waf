@@ -6,80 +6,36 @@ resource "aws_wafv2_web_acl" "external" {
     block {}
   }
 
-  rule {
-    name     = "AWS-AWSManagedRulesCommonRuleSet"
-    priority = 1
-
-    override_action {
-      none {}
-    }
-
-    statement {
-      managed_rule_group_statement {
-        name        = "AWSManagedRulesCommonRuleSet"
-        vendor_name = "AWS"
+  dynamic "rule" {
+    for_each = toset(var.rules)
+    content {
+      name     = rule.value.name
+      priority = rule.value.priority
+      override_action {
+        none {}
+      }
+      statement {
+        managed_rule_group_statement {
+          name        = rule.value.managed_rule_group_statement_name
+          vendor_name = rule.value.managed_rule_group_statement_vendor_name
+        }
+      }
+      visibility_config {
+        cloudwatch_metrics_enabled = false
+        metric_name                = rule.value.metric_name
+        sampled_requests_enabled   = false
       }
     }
-
-    visibility_config {
-      cloudwatch_metrics_enabled = true
-      metric_name                = "AWS-AWSManagedRulesCommonRuleSet"
-      sampled_requests_enabled   = true
-    }
   }
-
-  rule {
-    name     = "AWS-AWSManagedRulesLinuxRuleSet"
-    priority = 2
-
-    statement {
-      managed_rule_group_statement {
-        name        = "AWSManagedRulesLinuxRuleSet"
-        vendor_name = "AWS"
-      }
-    }
-
-    override_action {
-      none {}
-    }
-
-    visibility_config {
-      cloudwatch_metrics_enabled = true
-      metric_name                = "AWS-AWSManagedRulesLinuxRuleSet"
-      sampled_requests_enabled   = true
-    }
-  }
-
-  rule {
-    name     = "AWS-AWSManagedRulesKnownBadInputsRuleSet"
-    priority = 3
-
-    override_action {
-      none {}
-    }
-
-    statement {
-      managed_rule_group_statement {
-        name        = "AWSManagedRulesKnownBadInputsRuleSet"
-        vendor_name = "AWS"
-      }
-    }
-
-    visibility_config {
-      cloudwatch_metrics_enabled = true
-      metric_name                = "AWS-AWSManagedRulesKnownBadInputsRuleSet"
-      sampled_requests_enabled   = true
-    }
-  }
-
   visibility_config {
     cloudwatch_metrics_enabled = true
     metric_name                = "ExternalACL"
     sampled_requests_enabled   = true
   }
 }
-
+/*
 resource "aws_wafv2_web_acl_association" "waf_alb" {
-  resource_arn =  var.resource_arn_for_association
+  resource_arn = var.resource_arn_for_association
   web_acl_arn  = aws_wafv2_web_acl.external.arn
 }
+*/
